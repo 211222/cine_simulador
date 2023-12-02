@@ -2,56 +2,40 @@ package com.example.simuladorcorte3.threads;
 
 import com.example.simuladorcorte3.models.MonitorCine;
 
-import java.util.Observable;
+public class HiloTaquilla implements Runnable {
+    private final MonitorCine monitorCine;
 
-public class HiloTaquilla extends Observable implements Runnable {
-    private MonitorCine monitorCine;
-    private boolean running;
-    private int idCliente; // Nuevo campo para almacenar el id del cliente
-
-    public HiloTaquilla(MonitorCine monitorCine, int idCliente) {
+    public HiloTaquilla(MonitorCine monitorCine) {
         this.monitorCine = monitorCine;
-        this.running = true;
-        this.idCliente = idCliente;
     }
 
-    public void detener() {
-        this.running = false;
-    }
 
     @Override
     public void run() {
-        while (running) {
-            try {
-                Thread.sleep((long) (Math.random() * 1000)); // Simular tiempo entre llegada de clientes
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                Thread.currentThread().interrupt(); // Restablecer la bandera de interrupción
-            }
 
-            // Compra de boleto y asignación de asiento
-            int asientoAsignado = monitorCine.comprarBoleto(idCliente);
+        while (true) {
+            int idCliente = monitorCine.obtenerClienteColaEspera();
+            if (idCliente != -1) {
 
-            if (asientoAsignado != -1) {
-                notificarObservadores("Taquilla asignando asiento: " + asientoAsignado);
+                if (monitorCine.tieneAsientoAsignado(idCliente)) {
+                    System.out.println("Cliente " + idCliente + " ya tiene un asiento asignado. No se asignará otro asiento.");
+                    continue;
+                }
 
-                // Ingresar a la sala
-                monitorCine.ingresoSala();
-                notificarObservadores("Cliente " + idCliente + " ingresó a la sala.");
+                int asientoAsignado = monitorCine.comprarBoleto(idCliente);
+                if (asientoAsignado != -1) {
+                    monitorCine.ingresoSala(idCliente);
+                } else {
 
-                // Pausa opcional entre llegada de clientes
-                try {
-                    Thread.sleep((long) (Math.random() * 1000));
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                    Thread.currentThread().interrupt(); // Restablecer la bandera de interrupción
+
+                    System.out.println("Cliente " + idCliente + " en espera. No hay asientos disponibles.");
+                    // Agrega el cliente a la cola de espera para futuros intentos
+                    monitorCine.agregarClienteColaEspera(idCliente);
                 }
             }
         }
     }
 
-    private void notificarObservadores(Object arg) {
-        setChanged();
-        notifyObservers(arg);
-    }
+
+
 }

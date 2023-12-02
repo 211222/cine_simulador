@@ -1,49 +1,52 @@
 package com.example.simuladorcorte3.threads;
 
 import com.example.simuladorcorte3.models.MonitorCine;
+import javafx.scene.image.ImageView;
 
 import java.util.Observable;
 
 public class HiloCliente extends Observable implements Runnable {
-    private static final long DELAY = 4000; // Ajusta la duración de la pausa según sea necesario
+    private final MonitorCine monitorCine;
+    private final int id;
+    private final ImageView imageView;
 
-    private int id;
-    private String nombre;
-    private MonitorCine monitorCine;
+    private boolean llego = false;
 
-    public HiloCliente(int id, String nombre, MonitorCine monitorCine) {
-        this.id = id;
-        this.nombre = nombre;
+
+    public HiloCliente(MonitorCine monitorCine, int id, ImageView imageView) {
         this.monitorCine = monitorCine;
+        this.id = id;
+        this.imageView = imageView;
     }
 
     @Override
     public void run() {
-        while (true) {
-            int asientoAsignado = monitorCine.comprarBoleto(id);
-
-            if (asientoAsignado != -1) {
-                notificarObservadores("Cliente " + id + " compró boleto. Asiento asignado: " + asientoAsignado);
-
-                monitorCine.ingresoSala();
-                notificarObservadores("Cliente " + id + " ingresó a la sala.");
-
-                // Agregar una pausa opcional entre llegada de clientes
-                try {
-                    Thread.sleep(DELAY);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                    Thread.currentThread().interrupt(); // Restablecer la bandera de interrupción
-                }
-            } else {
-                // Si no se pudo comprar el boleto, salir del bucle
-                break;
-            }
-        }
+        // Lógica del cliente
+        monitorCine.ingresoSala(id);
+        setChanged();
+        notifyObservers(id);
     }
 
-    private void notificarObservadores(Object arg) {
+    public ImageView getImageView() {
+        return imageView;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void getAsiento() {
         setChanged();
-        notifyObservers(arg);
+        notifyObservers(id);
+    }
+
+    public boolean haLlegado() {
+        return llego;
+    }
+
+    public void setLlego(boolean llego) {
+        this.llego = llego;
+        setChanged();
+        notifyObservers();
     }
 }
